@@ -9,7 +9,7 @@ Created on Wed Jul 14 11:15:20 2021
 import cv2
 import os.path
 from tqdm import tqdm
-
+import matplotlib.pyplot as plt 
 file_path = r"/Users/alex/Documents/Chem Eng/Masters Project  /vid dir/"
 path_dir = os.listdir(file_path)   #Return the file name in the folder
 save_path = r"/Users/alex/Documents/Chem Eng/Masters Project  /pics/"
@@ -24,21 +24,22 @@ for allDir in tqdm(path_dir):
         rval = False
  
     timeF = 60 # Video frame count interval frequency
-
-    while rval:  # Cycle through video frames
-        rval, frame = video.read()
-        if (count % timeF == 0):  # Store operation every timeF frame
-            # cv2.imshow('pic',frame)
-            cv2.imwrite(save_path + str(name_count) + '.jpg', frame)  # imwrite cannot save Chinese path in py3
-            # cv2.imencode('.jpg', frame)[1].tofile(save_path + str(count) +'.jpg') # Save as image
-            # print('E:\Dataset\file\Data\image/' +'%06d'% c +'.jpg')
-            name_count=name_count+1
-        count = count + 1
-        cv2.waitKey(1)
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    plt.imshow(frame)
+    
+    break 
+    # while rval:  # Cycle through video frames
+    #     rval, frame = video.read()
+    #     if (count % timeF == 0):  # Store operation every timeF frame
+    #         # cv2.imshow('pic',frame)
+    #         cv2.imwrite(save_path + str(name_count) + '.jpg', frame)  # imwrite cannot save Chinese path in py3
+    #         # cv2.imencode('.jpg', frame)[1].tofile(save_path + str(count) +'.jpg') # Save as image
+    #         # print('E:\Dataset\file\Data\image/' +'%06d'% c +'.jpg')
+    #         name_count=name_count+1
+    #     count = count + 1
+    #     cv2.waitKey(1)
 
 video.release()
-
-
 
 # import cv2
 # import os
