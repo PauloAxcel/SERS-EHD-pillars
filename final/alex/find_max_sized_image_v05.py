@@ -354,7 +354,7 @@ def break_image2(input_frames,shape):
             a = im.crop(box)
             test_image.append(a)
             mask = np.zeros((imgheight,imgwidth,3))
-            mask[j:j+width,i:i+height,:]=1
+            mask[i:i+height,j:j+width,:]=1
             masked.append(mask)
             
     return test_image,division,masked
@@ -467,9 +467,7 @@ def subsection(test_image2,model,label):
         sectionit = []
         mask = []
         size =  list(image_identifier.layers[0].layers[0].output.shape[1:3])
-        img = f.convert('RGB').resize((size[0]
-                                           ,size[1]),
-                                          Image.ANTIALIAS)
+        img = f.convert('RGB').resize((size[0] ,size[1]), Image.ANTIALIAS)
                 
         open_cv_image = np.array(img) 
         open_cv_image = open_cv_image[:, :, ::-1].copy() 
@@ -517,7 +515,7 @@ def subsection(test_image2,model,label):
             mask.append(zeromask)
          
         if sectionit == []:
-            continue
+            finalimg.append(0)
         else:
                 
 #            fig, axs = plt.subplots(int(np.sqrt(len(sectionit)))+1,int(np.sqrt(len(sectionit)))+1)
@@ -621,37 +619,36 @@ def subsection(test_image2,model,label):
                     heatmaps.append(0)
         
         
-        #generate a patch to put the masks times the blend image
-        patch = np.zeros((mask[0].shape[0],mask[0].shape[1],mask[0].shape[2]))  
-        
-        #generate a image with all the mask holes
-        image_hole = np.array([0 if a_ < 1 else 1 for a_ in sum(mask).ravel()]).reshape(mask[0].shape[0],
-                                                                                        mask[0].shape[1],
-                                                                                        mask[0].shape[2])        
-        for m,h,z in zip(mask,heatmaps,sectionit):
-            if not isinstance(h,int):
-                #resize the heatmap to its real heatmap size
-                hscale = cv2.resize(h,(z.shape[1],z.shape[0]))
-
-                #find the mask first position
-                xx = [np.min(np.where(m==1)[0]),np.max(np.where(m==1)[0])]
-                yy = [np.min(np.where(m==1)[1]),np.max(np.where(m==1)[1])]
-
-                patch[xx[0]:xx[1]+1,yy[0]:yy[1]+1,:]=hscale/255.0
-        
-        #final image is the initial image opened with all the holes from the masks and added patches with the sers
-        #non sers model
-        final_img = open_cv_image*(-1*(image_hole-1)/255.0)+patch
-        
-        plt.figure()
-        plt.imshow(final_img)
-        finalimg.append(final_img)
-                        
-                        #fill the hole with the blend
+            #generate a patch to put the masks times the blend image
+            patch = np.zeros((mask[0].shape[0],mask[0].shape[1],mask[0].shape[2]))  
             
-
+            #generate a image with all the mask holes
+            image_hole = np.array([0 if a_ < 1 else 1 for a_ in sum(mask).ravel()]).reshape(mask[0].shape[0],
+                                                                                            mask[0].shape[1],
+                                                                                            mask[0].shape[2])        
+            for m,h,z in zip(mask,heatmaps,sectionit):
+                if not isinstance(h,int):
+                    #resize the heatmap to its real heatmap size
+                    hscale = cv2.resize(h,(z.shape[1],z.shape[0]))
+    
+                    #find the mask first position
+                    xx = [np.min(np.where(m==1)[0]),np.max(np.where(m==1)[0])]
+                    yy = [np.min(np.where(m==1)[1]),np.max(np.where(m==1)[1])]
+    
+                    patch[xx[0]:xx[1]+1,yy[0]:yy[1]+1,:]=hscale/255.0
+            
+            #final image is the initial image opened with all the holes from the masks and added patches with the sers
+            #non sers model
+            final_img = open_cv_image*(-1*(image_hole-1)/255.0)+patch
+            
+            plt.figure()
+            plt.imshow(final_img)
+            finalimg.append(final_img)
+                            
+                        #fill the hole with the blend
     return finalimg
     
+
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
@@ -737,20 +734,47 @@ test_image2,division2,masked2 = break_image2(newcropped,size2)
 sers_identifier = load_model('SERS_NOSERS_pillars_v08.h5')
 
 
-model = sers_identifier
-label = 'sers_notsers'
-
-final = subsection(test_image2,model,label)
+final = subsection(test_image2,sers_identifier,'sers_notsers')
 
 
+def buildup1(final,masked2,cropped):
+        
+    buraco = []
+    for f,m in zip(final,masked2):
+            
+           #generate a patch to put the masks times the blend image
+        patch = np.zeros((cropped.shape[0],cropped.shape[1],cropped.shape[2]))  
+        
+        #generate a image with all the mask holes
+        if not isinstance(f,int):
+            continue
+        else:
+            buraco.append(m)
+        
+    buraco2 = sum(buraco)
+    
+    patch = np.zeros((cropped.shape[0],cropped.shape[1],cropped.shape[2]))  
+    
+    for f,m in zip(final,masked2):
+        if not isinstance(f,int):
+    
+            #find the mask first position
+            xx = [np.min(np.where(m==1)[0]),np.max(np.where(m==1)[0])]
+            yy = [np.min(np.where(m==1)[1]),np.max(np.where(m==1)[1])]
+    
+    #        buraco2[xx[0]:xx[1]+1,yy[0]:yy[1]+1,:]=fscale/255.0
+            patch[xx[0]:xx[1]+1,yy[0]:yy[1]+1,:]=f
+    
+    
+    croppedclass = buraco2*cropped/255.0+patch
+    
+    return croppedclass
 
 
 
-
-
-
-
-
+croppedclass = buildup1(final,masked2,cropped)         
+    
+croppedimage = buildup1(croppedclass,masked,frame)
 
 
 
